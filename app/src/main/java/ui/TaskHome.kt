@@ -1,8 +1,11 @@
 package ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,8 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import model.Task
+import model.TaskStatus
 
 @Composable
 fun TaskHome(modifier: Modifier = Modifier) {
@@ -46,13 +51,24 @@ fun TaskHome(modifier: Modifier = Modifier) {
             Text("Ajouter une tache")
         }
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(tasks) { task ->
-                Text("• ${task.label}", style = MaterialTheme.typography.bodyLarge)
+        TaskListScreen(
+            tasks = tasks,
+            onToggleStatusAt = { index ->
+                val t = tasks[index]
+                val next = when (t.status) {
+                    TaskStatus.A_FAIRE -> TaskStatus.EN_COURS
+                    TaskStatus.EN_COURS -> TaskStatus.TERMINEE
+                    TaskStatus.TERMINEE -> TaskStatus.A_FAIRE
+                }
+                tasks[index] = t.copy(status = next)
+            },
+            onDeleteAt = { index ->
+                tasks.removeAt(index)
             }
-        }
+        )
     }
 
+    // Dialog Ajouter
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -66,7 +82,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                     onValueChange = { newLabel = it },
                     singleLine = true,
                     label = { Text("Nouvelle tache") },
-                    placeholder = { Text("Met une tache") }
+                    placeholder = { Text("met une nouvelle tache") }
                 )
             },
             confirmButton = {
@@ -88,3 +104,5 @@ fun TaskHome(modifier: Modifier = Modifier) {
         )
     }
 }
+
+

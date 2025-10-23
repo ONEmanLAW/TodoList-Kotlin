@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,49 +22,61 @@ import androidx.compose.ui.unit.dp
 import model.Task
 import model.TaskStatus
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.TextButton
+
+
 
 @Composable
 fun TaskListScreen(
     tasks: List<Task>,
-    onTaskClick: (Task) -> Unit,
+    onToggleStatusAt: (Int) -> Unit,
+    onDeleteAt: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn (
+    LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(0.dp)
     ) {
-        items(tasks) { task ->
-            TaskItem(task = task, onClick = { onTaskClick(task) })
+        itemsIndexed(tasks) { index, task ->
+            TaskRow(
+                task = task,
+                onToggleStatus = { onToggleStatusAt(index) },
+                onDelete = { onDeleteAt(index) }
+            )
         }
     }
 }
 
+
 @Composable
-private fun TaskItem(task: Task, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+fun TaskRow(
+    task: Task,
+    onToggleStatus: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggleStatus()}
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                text = task.label,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            if (task.description.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(8.dp))
+        Column (Modifier.weight(1f)) {
+            Text(task.label, style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold)
             Text(
                 text = when (task.status) {
-                    TaskStatus.A_FAIRE -> "À faire"
+                    TaskStatus.A_FAIRE -> "A faire"
                     TaskStatus.EN_COURS -> "En cours"
-                    TaskStatus.TERMINEE -> "Terminée"
+                    TaskStatus.TERMINEE -> "Terminer"
                 },
-                style = MaterialTheme.typography.labelMedium
+                style  = MaterialTheme.typography.labelMedium
             )
+        }
+        TextButton(onClick = onDelete) {
+            Text("Supprimer")
         }
     }
 }
