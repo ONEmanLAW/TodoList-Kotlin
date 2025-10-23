@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todolistapp.ui.theme.TodoListAppTheme
 import model.Task
+import ui.TaskHome
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,70 +47,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-private fun TaskHome(modifier: Modifier = Modifier) {
-    val tasks = remember {
-        mutableStateListOf(
-            Task(label = "Préparer le TD"),
-            Task(label = "Envoyer le mail"),
-            Task(label = "Courses")
-        )
-    }
-
-    var showAddDialog by remember { mutableStateOf(false) }
-    var newLabel by remember { mutableStateOf("") }
-
-    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(onClick = { showAddDialog = true }) {
-                Text("Ajoute une tache")
-            }
-
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(tasks) { task ->
-                    Text("• ${task.label}", style = MaterialTheme.typography.bodyLarge)
-                }
-            }
-
-            if (showAddDialog) {
-                AlertDialog(
-                    onDismissRequest = {
-                        showAddDialog = false
-                        newLabel = ""
-                    },
-                    title = { Text("Nouvelle Tache") },
-                    text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = newLabel,
-                                onValueChange = { newLabel = it },
-                                singleLine = true,
-                                label = { Text("Tache") },
-                                placeholder = { Text("Met une tache") }
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            enabled = newLabel.isNotBlank(),
-                            onClick = {
-                                tasks.add(Task(label = newLabel.trim()))
-                                newLabel = ""
-                                showAddDialog = false
-                            }
-                        ) { Text("Ajouter") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            newLabel = ""
-                            showAddDialog = false
-                        }) { Text("Annuler") }
-                    }
-                )
-            }
-        }
-    }
-}
