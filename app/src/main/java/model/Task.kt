@@ -8,7 +8,9 @@ data class Task(
     val description: String = "",
     val status: TaskStatus = TaskStatus.A_FAIRE,
     val type: TaskType = TaskType.AUTRE,
-    val createdAt: String? = null,
-    val updatedAt: String? = null,
-    val dueDate: String? = null
+    val createdAt: String = nowMillisString(),
+    val updatedAt: String = nowMillisString(),
+    val dueDate: String? = null // "YYYY-MM-DD"
 )
+
+fun nowMillisString(): String = System.currentTimeMillis().toString()
