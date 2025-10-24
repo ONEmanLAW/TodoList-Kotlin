@@ -27,6 +27,7 @@ import model.Task
 import model.TaskStatus
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TextButton
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 
 
 @Composable
@@ -69,11 +71,20 @@ fun TaskRow(
 ) {
     Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(Modifier.padding(12.dp)) {
-            Text(
-                text = task.label,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = task.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = onEdit) { Text("Edit") }
+                Spacer(Modifier.padding(horizontal = 4.dp))
+                TextButton(onClick = onDelete) { Text("Delete") }
+            }
 
             if (task.description.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
@@ -84,19 +95,20 @@ fun TaskRow(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusMenu(
-                        status = task.status,
-                        onSelect = onChangeStatus
-                    )
-                    Text("• Type: ${task.type.name.lowercase().replaceFirstChar { it.titlecase() }}",
-                        style = MaterialTheme.typography.labelMedium)
-                }
-                val due = task.dueDate?.let { "Échéance: $it" }
-                if (due != null) {
-                    Text(due, style = MaterialTheme.typography.labelMedium)
+                StatusMenu(
+                    status = task.status,
+                    onSelect = onChangeStatus
+                )
+                Spacer(Modifier.padding(horizontal = 8.dp))
+                Text(
+                    "Type: ${task.type.name.lowercase().replaceFirstChar { it.titlecase() }}",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                task.dueDate?.let {
+                    Text("Due: $it", style = MaterialTheme.typography.labelMedium)
                 }
             }
 
@@ -104,22 +116,11 @@ fun TaskRow(
 
             val isModified = task.updatedAt != task.createdAt
             val stamp = if (isModified) task.updatedAt else task.createdAt
-            val label = if (isModified) "Modifiée le" else "Créée le"
+            val prefix = if (isModified) "Edited on" else "Created on"
             Text(
-                "$label ${formatDateTime(taskStamp = stamp)}",
+                "$prefix ${formatDateTime(stamp)}",
                 style = MaterialTheme.typography.bodySmall
             )
-
-            Spacer(Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = onEdit) { Text("Modifier") }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onDelete) { Text("Supprimer") }
-            }
         }
     }
 }
@@ -130,37 +131,26 @@ private fun StatusMenu(
     onSelect: (TaskStatus) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    TextButton(onClick = { expanded = true }) {
+    Button(onClick = { expanded = true }) {
         Text(
             when (status) {
-                TaskStatus.A_FAIRE -> "À faire"
-                TaskStatus.EN_COURS -> "En cours"
-                TaskStatus.TERMINEE -> "Terminée"
+                TaskStatus.A_FAIRE -> "To do"
+                TaskStatus.EN_COURS -> "In progress"
+                TaskStatus.TERMINEE -> "Done"
             }
         )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(
-            text = { Text("À faire") },
-            onClick = { expanded = false; onSelect(TaskStatus.A_FAIRE) }
-        )
-        DropdownMenuItem(
-            text = { Text("En cours") },
-            onClick = { expanded = false; onSelect(TaskStatus.EN_COURS) }
-        )
-        DropdownMenuItem(
-            text = { Text("Terminée") },
-            onClick = { expanded = false; onSelect(TaskStatus.TERMINEE) }
-        )
+        DropdownMenuItem(text = { Text("To do") }, onClick = { expanded = false; onSelect(TaskStatus.A_FAIRE) })
+        DropdownMenuItem(text = { Text("In progress") }, onClick = { expanded = false; onSelect(TaskStatus.EN_COURS) })
+        DropdownMenuItem(text = { Text("Done") }, onClick = { expanded = false; onSelect(TaskStatus.TERMINEE) })
     }
 }
 
-
-// Added SuppressLint pour eviter surlinage de SimpleDateFormat.
 @SuppressLint("SimpleDateFormat")
-private fun formatDateTime(taskStamp: String?): String {
-    if (taskStamp.isNullOrBlank()) return "-"
-    val ms = taskStamp.toLongOrNull() ?: return taskStamp
+private fun formatDateTime(msString: String?): String {
+    if (msString.isNullOrBlank()) return "-"
+    val ms = msString.toLongOrNull() ?: return msString
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", ULocale.getDefault())
     return sdf.format(ms)
 }

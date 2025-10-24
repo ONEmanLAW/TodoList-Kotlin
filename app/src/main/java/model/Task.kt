@@ -10,7 +10,7 @@ data class Task(
     val type: TaskType = TaskType.AUTRE,
     val createdAt: String = nowMillisString(),
     val updatedAt: String = nowMillisString(),
-    val dueDate: String? = null // "YYYY-MM-DD"
+    val dueDate: String? = null // YYYY-MM-DD
 )
 
 fun nowMillisString(): String = System.currentTimeMillis().toString()
