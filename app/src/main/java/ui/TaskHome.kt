@@ -6,10 +6,13 @@ import android.icu.util.ULocale
 import android.widget.DatePicker
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -39,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,11 +79,20 @@ fun TaskHome(modifier: Modifier = Modifier) {
     var showEditDatePicker by remember { mutableStateOf(false) }
     val editDateState = rememberDatePickerState()
 
+    var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
+
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Button(onClick = { showAddDialog = true }) { Text("Add task") }
+        Button(
+            onClick = { showAddDialog = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text("Add task")
+        }
 
         TaskListScreen(
             tasks = tasks,
@@ -95,7 +108,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 editType = t.type
                 editDue = t.dueDate
             },
-            onDeleteAt = { index -> tasks.removeAt(index) }
+            onDeleteAt = { index -> pendingDeleteIndex = index }
         )
     }
 
@@ -108,7 +121,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
             title = { Text("New task") },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     OutlinedTextField(
@@ -116,7 +129,6 @@ fun TaskHome(modifier: Modifier = Modifier) {
                         onValueChange = { addLabel = it },
                         singleLine = true,
                         label = { Text("Title") },
-                        placeholder = { Text("e.g., Study Kotlin") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
@@ -137,21 +149,30 @@ fun TaskHome(modifier: Modifier = Modifier) {
                             )
                         }
                     }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = addDue ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Due date") },
-                            leadingIcon = {
-                                IconButton(onClick = { showAddDatePicker = true }) {
-                                    Icon(painterResource(id = R.drawable.date_icon), contentDescription = "Pick date")
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = addDue ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Due date") },
+                                leadingIcon = {
+                                    IconButton(onClick = { showAddDatePicker = true }) {
+                                        Icon(
+                                            painterResource(id = R.drawable.date_icon),
+                                            contentDescription = "Pick date",
+                                            modifier = Modifier.scale(0.85f)
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(
+                                Modifier
+                                    .matchParentSize()
+                                    .clickable { showAddDatePicker = true }
+                            )
+                        }
                     }
                 }
             },
@@ -194,9 +215,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
             dismissButton = {
                 TextButton(onClick = { showAddDatePicker = false }) { Text("Cancel") }
             }
-        ) {
-            DatePicker(state = addDateState)
-        }
+        ) { DatePicker(state = addDateState) }
     }
 
     editIndex?.let { index ->
@@ -205,7 +224,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
             title = { Text("Edit task") },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     OutlinedTextField(
@@ -234,18 +253,29 @@ fun TaskHome(modifier: Modifier = Modifier) {
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = editDue ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Due date") },
-                            leadingIcon = {
-                                IconButton(onClick = { showEditDatePicker = true }) {
-                                    Icon(painterResource(id = R.drawable.date_icon), contentDescription = "Pick date")
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                        Box(Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = editDue ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Due date") },
+                                leadingIcon = {
+                                    IconButton(onClick = { showEditDatePicker = true }) {
+                                        Icon(
+                                            painterResource(id = R.drawable.date_icon),
+                                            contentDescription = "Pick date",
+                                            modifier = Modifier.scale(0.85f)
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(
+                                Modifier
+                                    .matchParentSize()
+                                    .clickable { showEditDatePicker = true }
+                            )
+                        }
                     }
                 }
             },
@@ -284,9 +314,24 @@ fun TaskHome(modifier: Modifier = Modifier) {
             dismissButton = {
                 TextButton(onClick = { showEditDatePicker = false }) { Text("Cancel") }
             }
-        ) {
-            DatePicker(state = editDateState)
-        }
+        ) { DatePicker(state = editDateState) }
+    }
+
+    pendingDeleteIndex?.let { index ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteIndex = null },
+            title = { Text("Delete task") },
+            text = { Text("Are you sure you want to delete this task?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    tasks.removeAt(index)
+                    pendingDeleteIndex = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteIndex = null }) { Text("Cancel") }
+            }
+        )
     }
 }
 

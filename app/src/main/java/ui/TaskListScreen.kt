@@ -48,8 +48,8 @@ fun TaskListScreen(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(0.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(4.dp)
     ) {
         itemsIndexed(tasks) { index, task ->
             TaskRow(
@@ -69,8 +69,11 @@ fun TaskRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-        Column(Modifier.padding(12.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -87,11 +90,11 @@ fun TaskRow(
             }
 
             if (task.description.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(task.description, style = MaterialTheme.typography.bodyMedium)
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -101,7 +104,7 @@ fun TaskRow(
                     status = task.status,
                     onSelect = onChangeStatus
                 )
-                Spacer(Modifier.padding(horizontal = 8.dp))
+                Spacer(Modifier.padding(horizontal = 10.dp))
                 Text(
                     "Type: ${task.type.name.lowercase().replaceFirstChar { it.titlecase() }}",
                     style = MaterialTheme.typography.labelMedium,
