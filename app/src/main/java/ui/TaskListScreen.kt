@@ -37,13 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 
-
 @Composable
 fun TaskListScreen(
     tasks: List<Task>,
-    onChangeStatusAt: (Int, TaskStatus) -> Unit,
-    onEditAt: (Int) -> Unit,
     onDeleteAt: (Int) -> Unit,
+    onOpenAt: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -54,9 +52,8 @@ fun TaskListScreen(
         itemsIndexed(tasks) { index, task ->
             TaskRow(
                 task = task,
-                onChangeStatus = { new -> onChangeStatusAt(index, new) },
-                onEdit = { onEditAt(index) },
-                onDelete = { onDeleteAt(index) }
+                onDelete = { onDeleteAt(index) },
+                onOpen = { onOpenAt(index) }
             )
         }
     }
@@ -65,12 +62,13 @@ fun TaskListScreen(
 @Composable
 fun TaskRow(
     task: Task,
-    onChangeStatus: (TaskStatus) -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onOpen: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpen() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -84,8 +82,6 @@ fun TaskRow(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = onEdit) { Text("Edit") }
-                Spacer(Modifier.padding(horizontal = 4.dp))
                 TextButton(onClick = onDelete) { Text("Delete") }
             }
 
@@ -100,11 +96,13 @@ fun TaskRow(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StatusMenu(
-                    status = task.status,
-                    onSelect = onChangeStatus
-                )
-                Spacer(Modifier.padding(horizontal = 10.dp))
+                val statusText = when (task.status) {
+                    model.TaskStatus.A_FAIRE -> "To do"
+                    model.TaskStatus.EN_COURS -> "In progress"
+                    model.TaskStatus.TERMINEE -> "Done"
+                }
+                Text(statusText, style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.width(10.dp))
                 Text(
                     "Type: ${task.type.name.lowercase().replaceFirstChar { it.titlecase() }}",
                     style = MaterialTheme.typography.labelMedium,
@@ -125,28 +123,6 @@ fun TaskRow(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-    }
-}
-
-@Composable
-private fun StatusMenu(
-    status: TaskStatus,
-    onSelect: (TaskStatus) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Button(onClick = { expanded = true }) {
-        Text(
-            when (status) {
-                TaskStatus.A_FAIRE -> "To do"
-                TaskStatus.EN_COURS -> "In progress"
-                TaskStatus.TERMINEE -> "Done"
-            }
-        )
-    }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(text = { Text("To do") }, onClick = { expanded = false; onSelect(TaskStatus.A_FAIRE) })
-        DropdownMenuItem(text = { Text("In progress") }, onClick = { expanded = false; onSelect(TaskStatus.EN_COURS) })
-        DropdownMenuItem(text = { Text("Done") }, onClick = { expanded = false; onSelect(TaskStatus.TERMINEE) })
     }
 }
 

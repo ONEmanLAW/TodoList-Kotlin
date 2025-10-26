@@ -3,7 +3,6 @@ package ui
 import android.annotation.SuppressLint
 import android.icu.text.SimpleDateFormat
 import android.icu.util.ULocale
-import android.widget.DatePicker
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -34,7 +32,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -49,13 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.todolistapp.R
 import model.Task
 import model.TaskStatus
 import model.TaskType
 import model.nowMillisString
-import com.example.todolistapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,17 +75,9 @@ fun TaskHome(modifier: Modifier = Modifier) {
     var showAddDatePicker by remember { mutableStateOf(false) }
     val addDateState = rememberDatePickerState()
 
-    var editIndex by remember { mutableStateOf<Int?>(null) }
-    var editLabel by rememberSaveable { mutableStateOf("") }
-    var editDesc by rememberSaveable { mutableStateOf("") }
-    var editType by rememberSaveable { mutableStateOf(TaskType.AUTRE) }
-    var editDue by rememberSaveable { mutableStateOf<String?>(null) }
-    var showEditDatePicker by remember { mutableStateOf(false) }
-    val editDateState = rememberDatePickerState()
-
-    var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
-
+    var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) } // pour suppression depuis la liste
     var showFilterScreen by remember { mutableStateOf(false) }
+    var detailIndex by remember { mutableStateOf<Int?>(null) }
 
     val visiblePairs = tasks.withIndex().filter { iv ->
         val sOk = activeStatus.isEmpty() || iv.value.status in activeStatus
@@ -107,10 +95,32 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 activeTypes.clear(); activeTypes.addAll(selTypes)
                 showFilterScreen = false
             },
-            onReset = {
-                activeStatus.clear(); activeTypes.clear()
-            },
+            onReset = { activeStatus.clear(); activeTypes.clear() },
             onClose = { showFilterScreen = false }
+        )
+        return
+    }
+
+    detailIndex?.let { idx ->
+        TaskDetailScreen(
+            task = tasks[idx],
+            onBack = { detailIndex = null },
+            onUpdate = { updated ->
+                tasks[idx] = updated.copy(updatedAt = nowMillisString())
+                detailIndex = null
+            },
+            onChangeStatus = { newStatus ->
+                val t = tasks[idx]
+                tasks[idx] = t.copy(status = newStatus, updatedAt = nowMillisString())
+            },
+            onChangeDueDate = { newDue ->
+                val t = tasks[idx]
+                tasks[idx] = t.copy(dueDate = newDue, updatedAt = nowMillisString())
+            },
+            onDelete = {
+                tasks.removeAt(idx)
+                detailIndex = null
+            }
         )
         return
     }
@@ -131,23 +141,13 @@ fun TaskHome(modifier: Modifier = Modifier) {
 
         TaskListScreen(
             tasks = visibleTasks,
-            onChangeStatusAt = { visIndex, new ->
-                val real = visiblePairs[visIndex].index
-                val t = tasks[real]
-                tasks[real] = t.copy(status = new, updatedAt = nowMillisString())
-            },
-            onEditAt = { visIndex ->
-                val real = visiblePairs[visIndex].index
-                val t = tasks[real]
-                editIndex = real
-                editLabel = t.label
-                editDesc = t.description
-                editType = t.type
-                editDue = t.dueDate
-            },
             onDeleteAt = { visIndex ->
                 val real = visiblePairs[visIndex].index
                 pendingDeleteIndex = real
+            },
+            onOpenAt = { visIndex ->
+                val real = visiblePairs[visIndex].index
+                detailIndex = real
             }
         )
     }
@@ -254,101 +254,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
         ) { DatePicker(state = addDateState) }
     }
 
-    editIndex?.let { index ->
-        AlertDialog(
-            onDismissRequest = { editIndex = null },
-            title = { Text("Edit task") },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    OutlinedTextField(
-                        value = editLabel,
-                        onValueChange = { editLabel = it },
-                        singleLine = true,
-                        label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = editDesc,
-                        onValueChange = { editDesc = it },
-                        label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text("Type", style = MaterialTheme.typography.labelLarge)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val all = listOf(TaskType.PERSONNEL, TaskType.TRAVAIL, TaskType.ETUDE, TaskType.AUTRE)
-                        items(all.size) { i ->
-                            val t = all[i]
-                            FilterChip(
-                                selected = (t == editType),
-                                onClick = { editType = t },
-                                label = { Text(t.name.lowercase().replaceFirstChar { it.titlecase() }) }
-                            )
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = editDue ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Due date") },
-                                leadingIcon = {
-                                    IconButton(onClick = { showEditDatePicker = true }) {
-                                        Icon(
-                                            painterResource(id = R.drawable.date_icon),
-                                            contentDescription = "Pick date",
-                                            modifier = Modifier.scale(0.85f)
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.matchParentSize().clickable { showEditDatePicker = true })
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = editLabel.isNotBlank(),
-                    onClick = {
-                        val cur = tasks[index]
-                        tasks[index] = cur.copy(
-                            label = editLabel.trim(),
-                            description = editDesc.trim(),
-                            type = editType,
-                            dueDate = editDue,
-                            updatedAt = nowMillisString()
-                        )
-                        editIndex = null
-                    }
-                ) { Text("Save") }
-            },
-            dismissButton = {
-                TextButton(onClick = { editIndex = null }) { Text("Cancel") }
-            }
-        )
-    }
-
-    if (showEditDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showEditDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val ms = editDateState.selectedDateMillis
-                    editDue = ms?.let { formatDateOnly(it) }
-                    showEditDatePicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditDatePicker = false }) { Text("Cancel") }
-            }
-        ) { DatePicker(state = editDateState) }
-    }
-
+    // modal de suppression (depuis la liste)
     pendingDeleteIndex?.let { index ->
         AlertDialog(
             onDismissRequest = { pendingDeleteIndex = null },
@@ -466,4 +372,3 @@ private fun formatDateOnly(ms: Long): String {
     val sdf = SimpleDateFormat("yyyy-MM-dd", ULocale.getDefault())
     return sdf.format(ms)
 }
-
