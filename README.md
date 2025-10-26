@@ -16,3 +16,10 @@ On peut ajouter, voir, filtrer, modifier et supprimer des tâches. L’UI est si
 - Sélection de date via **DatePicker**
 
 > Données stockées **en mémoire** (pas encore persistées).
+
+
+## ▶️ Lancer
+1. Ouvrir le projet dans **Android Studio**.
+2. Lancer un émulateur (ou brancher un appareil).
+3. Exécuter l’app depuis **MainActivity**.
+
