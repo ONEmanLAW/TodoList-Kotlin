@@ -63,6 +63,8 @@ fun TaskHome(modifier: Modifier = Modifier) {
         )
     }
 
+    val activeFilters = remember { mutableStateListOf<TaskStatus>() }
+
     var showAddDialog by remember { mutableStateOf(false) }
     var addLabel by rememberSaveable { mutableStateOf("") }
     var addDesc by rememberSaveable { mutableStateOf("") }
@@ -81,6 +83,11 @@ fun TaskHome(modifier: Modifier = Modifier) {
 
     var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
 
+    val visibleTasks = remember(activeFilters, tasks) {
+        if (activeFilters.isEmpty()) tasks.toList()
+        else tasks.filter { it.status in activeFilters }
+    }
+
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -94,21 +101,72 @@ fun TaskHome(modifier: Modifier = Modifier) {
             Text("Add task")
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val allSelected = activeFilters.isEmpty()
+            FilterChip(
+                selected = allSelected,
+                onClick = { activeFilters.clear() },
+                label = { Text("All") }
+            )
+            FilterChip(
+                selected = TaskStatus.A_FAIRE in activeFilters,
+                onClick = {
+                    if (TaskStatus.A_FAIRE in activeFilters) activeFilters.remove(TaskStatus.A_FAIRE)
+                    else {
+                        activeFilters.add(TaskStatus.A_FAIRE)
+                    }
+                },
+                label = { Text("To do") }
+            )
+            FilterChip(
+                selected = TaskStatus.EN_COURS in activeFilters,
+                onClick = {
+                    if (TaskStatus.EN_COURS in activeFilters) activeFilters.remove(TaskStatus.EN_COURS)
+                    else {
+                        activeFilters.add(TaskStatus.EN_COURS)
+                    }
+                },
+                label = { Text("In progress") }
+            )
+            FilterChip(
+                selected = TaskStatus.TERMINEE in activeFilters,
+                onClick = {
+                    if (TaskStatus.TERMINEE in activeFilters) activeFilters.remove(TaskStatus.TERMINEE)
+                    else {
+                        activeFilters.add(TaskStatus.TERMINEE)
+                    }
+                },
+                label = { Text("Done") }
+            )
+        }
+
         TaskListScreen(
-            tasks = tasks,
+            tasks = visibleTasks,
             onChangeStatusAt = { index, new ->
-                val t = tasks[index]
-                tasks[index] = t.copy(status = new, updatedAt = nowMillisString())
+                val real = if (activeFilters.isEmpty()) index
+                else tasks.indexOf(visibleTasks[index])
+                val t = tasks[real]
+                tasks[real] = t.copy(status = new, updatedAt = nowMillisString())
             },
             onEditAt = { index ->
-                val t = tasks[index]
-                editIndex = index
+                val real = if (activeFilters.isEmpty()) index
+                else tasks.indexOf(visibleTasks[index])
+                val t = tasks[real]
+                editIndex = real
                 editLabel = t.label
                 editDesc = t.description
                 editType = t.type
                 editDue = t.dueDate
             },
-            onDeleteAt = { index -> pendingDeleteIndex = index }
+            onDeleteAt = { index ->
+                val real = if (activeFilters.isEmpty()) index
+                else tasks.indexOf(visibleTasks[index])
+                pendingDeleteIndex = real
+            }
         )
     }
 
@@ -134,7 +192,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                     OutlinedTextField(
                         value = addDesc,
                         onValueChange = { addDesc = it },
-                        label = { Text("Description (optional)") },
+                        label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text("Type", style = MaterialTheme.typography.labelLarge)
