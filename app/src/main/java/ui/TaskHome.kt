@@ -289,18 +289,15 @@ private fun FilterScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Filters") },
-                navigationIcon = { TextButton(onClick = onClose) { Text("Close") } }
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
+                navigationIcon = { TextButton(onClick = onClose) { Text("Close") } },
                 actions = {
-                    OutlinedButton(onClick = {
-                        selStatus.clear(); selTypes.clear(); onReset()
-                    }) { Text("Reset") }
-                },
-                floatingActionButton = {
-                    Button(onClick = { onApply(selStatus.toList(), selTypes.toList()) }) { Text("Apply") }
+                    TextButton(
+                        onClick = {
+                            selStatus.clear()
+                            selTypes.clear()
+                            onReset()
+                        }
+                    ) { Text("Reset") }
                 }
             )
         }
@@ -309,7 +306,7 @@ private fun FilterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -322,7 +319,9 @@ private fun FilterScreen(
                             val s = statuses[i]
                             FilterChip(
                                 selected = s in selStatus,
-                                onClick = { if (s in selStatus) selStatus.remove(s) else selStatus.add(s) },
+                                onClick = {
+                                    if (s in selStatus) selStatus.remove(s) else selStatus.add(s)
+                                },
                                 label = {
                                     Text(
                                         when (s) {
@@ -347,7 +346,9 @@ private fun FilterScreen(
                             val t = types[i]
                             FilterChip(
                                 selected = t in selTypes,
-                                onClick = { if (t in selTypes) selTypes.remove(t) else selTypes.add(t) },
+                                onClick = {
+                                    if (t in selTypes) selTypes.remove(t) else selTypes.add(t)
+                                },
                                 label = {
                                     Text(
                                         when (t) {
@@ -363,6 +364,15 @@ private fun FilterScreen(
                     }
                 }
             }
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = { onApply(selStatus.toList(), selTypes.toList()) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) { Text("Apply filters") }
         }
     }
 }
