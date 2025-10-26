@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +30,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,7 +68,8 @@ fun TaskHome(modifier: Modifier = Modifier) {
         )
     }
 
-    val activeFilters = remember { mutableStateListOf<TaskStatus>() }
+    val activeStatus = remember { mutableStateListOf<TaskStatus>() }
+    val activeTypes = remember { mutableStateListOf<TaskType>() }
 
     var showAddDialog by remember { mutableStateOf(false) }
     var addLabel by rememberSaveable { mutableStateOf("") }
@@ -83,10 +89,31 @@ fun TaskHome(modifier: Modifier = Modifier) {
 
     var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
 
+    var showFilterScreen by remember { mutableStateOf(false) }
+
     val visiblePairs = tasks.withIndex().filter { iv ->
-        if (activeFilters.isEmpty()) true else iv.value.status in activeFilters
+        val sOk = activeStatus.isEmpty() || iv.value.status in activeStatus
+        val tOk = activeTypes.isEmpty() || iv.value.type in activeTypes
+        sOk && tOk
     }
     val visibleTasks = visiblePairs.map { it.value }
+
+    if (showFilterScreen) {
+        FilterScreen(
+            initialStatus = activeStatus.toList(),
+            initialTypes = activeTypes.toList(),
+            onApply = { selStatus, selTypes ->
+                activeStatus.clear(); activeStatus.addAll(selStatus)
+                activeTypes.clear(); activeTypes.addAll(selTypes)
+                showFilterScreen = false
+            },
+            onReset = {
+                activeStatus.clear(); activeTypes.clear()
+            },
+            onClose = { showFilterScreen = false }
+        )
+        return
+    }
 
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -94,47 +121,13 @@ fun TaskHome(modifier: Modifier = Modifier) {
     ) {
         Button(
             onClick = { showAddDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
+            modifier = Modifier.fillMaxWidth().height(56.dp)
         ) { Text("Add task") }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val allSelected = activeFilters.isEmpty()
-            FilterChip(
-                selected = allSelected,
-                onClick = { activeFilters.clear() },
-                label = { Text("All") }
-            )
-            FilterChip(
-                selected = TaskStatus.A_FAIRE in activeFilters,
-                onClick = {
-                    if (TaskStatus.A_FAIRE in activeFilters) activeFilters.remove(TaskStatus.A_FAIRE)
-                    else activeFilters.add(TaskStatus.A_FAIRE)
-                },
-                label = { Text("To do") }
-            )
-            FilterChip(
-                selected = TaskStatus.EN_COURS in activeFilters,
-                onClick = {
-                    if (TaskStatus.EN_COURS in activeFilters) activeFilters.remove(TaskStatus.EN_COURS)
-                    else activeFilters.add(TaskStatus.EN_COURS)
-                },
-                label = { Text("In progress") }
-            )
-            FilterChip(
-                selected = TaskStatus.TERMINEE in activeFilters,
-                onClick = {
-                    if (TaskStatus.TERMINEE in activeFilters) activeFilters.remove(TaskStatus.TERMINEE)
-                    else activeFilters.add(TaskStatus.TERMINEE)
-                },
-                label = { Text("Done") }
-            )
-        }
+        OutlinedButton(
+            onClick = { showFilterScreen = true },
+            modifier = Modifier.fillMaxWidth().height(44.dp)
+        ) { Text("Filter") }
 
         TaskListScreen(
             tasks = visibleTasks,
@@ -181,7 +174,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                     OutlinedTextField(
                         value = addDesc,
                         onValueChange = { addDesc = it },
-                        label = { Text("Description") },
+                        label = { Text("Description (optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text("Type", style = MaterialTheme.typography.labelLarge)
@@ -214,11 +207,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(
-                                Modifier
-                                    .matchParentSize()
-                                    .clickable { showAddDatePicker = true }
-                            )
+                            Spacer(Modifier.matchParentSize().clickable { showAddDatePicker = true })
                         }
                     }
                 }
@@ -317,11 +306,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(
-                                Modifier
-                                    .matchParentSize()
-                                    .clickable { showEditDatePicker = true }
-                            )
+                            Spacer(Modifier.matchParentSize().clickable { showEditDatePicker = true })
                         }
                     }
                 }
@@ -379,6 +364,100 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 TextButton(onClick = { pendingDeleteIndex = null }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterScreen(
+    initialStatus: List<TaskStatus>,
+    initialTypes: List<TaskType>,
+    onApply: (List<TaskStatus>, List<TaskType>) -> Unit,
+    onReset: () -> Unit,
+    onClose: () -> Unit
+) {
+    val selStatus = remember { mutableStateListOf<TaskStatus>().apply { addAll(initialStatus) } }
+    val selTypes  = remember { mutableStateListOf<TaskType>().apply { addAll(initialTypes) } }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Filters") },
+                navigationIcon = { TextButton(onClick = onClose) { Text("Close") } }
+            )
+        },
+        bottomBar = {
+            BottomAppBar(
+                actions = {
+                    OutlinedButton(onClick = {
+                        selStatus.clear(); selTypes.clear(); onReset()
+                    }) { Text("Reset") }
+                },
+                floatingActionButton = {
+                    Button(onClick = { onApply(selStatus.toList(), selTypes.toList()) }) { Text("Apply") }
+                }
+            )
+        }
+    ) { inner ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Status", style = MaterialTheme.typography.titleMedium)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val statuses = listOf(TaskStatus.A_FAIRE, TaskStatus.EN_COURS, TaskStatus.TERMINEE)
+                        items(statuses.size) { i ->
+                            val s = statuses[i]
+                            FilterChip(
+                                selected = s in selStatus,
+                                onClick = { if (s in selStatus) selStatus.remove(s) else selStatus.add(s) },
+                                label = {
+                                    Text(
+                                        when (s) {
+                                            TaskStatus.A_FAIRE -> "To do"
+                                            TaskStatus.EN_COURS -> "In progress"
+                                            TaskStatus.TERMINEE -> "Done"
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Type", style = MaterialTheme.typography.titleMedium)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val types = listOf(TaskType.PERSONNEL, TaskType.TRAVAIL, TaskType.ETUDE, TaskType.AUTRE)
+                        items(types.size) { i ->
+                            val t = types[i]
+                            FilterChip(
+                                selected = t in selTypes,
+                                onClick = { if (t in selTypes) selTypes.remove(t) else selTypes.add(t) },
+                                label = {
+                                    Text(
+                                        when (t) {
+                                            TaskType.PERSONNEL -> "Personal"
+                                            TaskType.TRAVAIL -> "Work"
+                                            TaskType.ETUDE -> "Study"
+                                            TaskType.AUTRE -> "Other"
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
