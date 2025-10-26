@@ -83,10 +83,10 @@ fun TaskHome(modifier: Modifier = Modifier) {
 
     var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
 
-    val visibleTasks = remember(activeFilters, tasks) {
-        if (activeFilters.isEmpty()) tasks.toList()
-        else tasks.filter { it.status in activeFilters }
+    val visiblePairs = tasks.withIndex().filter { iv ->
+        if (activeFilters.isEmpty()) true else iv.value.status in activeFilters
     }
+    val visibleTasks = visiblePairs.map { it.value }
 
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -97,9 +97,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-        ) {
-            Text("Add task")
-        }
+        ) { Text("Add task") }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -116,9 +114,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 selected = TaskStatus.A_FAIRE in activeFilters,
                 onClick = {
                     if (TaskStatus.A_FAIRE in activeFilters) activeFilters.remove(TaskStatus.A_FAIRE)
-                    else {
-                        activeFilters.add(TaskStatus.A_FAIRE)
-                    }
+                    else activeFilters.add(TaskStatus.A_FAIRE)
                 },
                 label = { Text("To do") }
             )
@@ -126,9 +122,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 selected = TaskStatus.EN_COURS in activeFilters,
                 onClick = {
                     if (TaskStatus.EN_COURS in activeFilters) activeFilters.remove(TaskStatus.EN_COURS)
-                    else {
-                        activeFilters.add(TaskStatus.EN_COURS)
-                    }
+                    else activeFilters.add(TaskStatus.EN_COURS)
                 },
                 label = { Text("In progress") }
             )
@@ -136,9 +130,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 selected = TaskStatus.TERMINEE in activeFilters,
                 onClick = {
                     if (TaskStatus.TERMINEE in activeFilters) activeFilters.remove(TaskStatus.TERMINEE)
-                    else {
-                        activeFilters.add(TaskStatus.TERMINEE)
-                    }
+                    else activeFilters.add(TaskStatus.TERMINEE)
                 },
                 label = { Text("Done") }
             )
@@ -146,15 +138,13 @@ fun TaskHome(modifier: Modifier = Modifier) {
 
         TaskListScreen(
             tasks = visibleTasks,
-            onChangeStatusAt = { index, new ->
-                val real = if (activeFilters.isEmpty()) index
-                else tasks.indexOf(visibleTasks[index])
+            onChangeStatusAt = { visIndex, new ->
+                val real = visiblePairs[visIndex].index
                 val t = tasks[real]
                 tasks[real] = t.copy(status = new, updatedAt = nowMillisString())
             },
-            onEditAt = { index ->
-                val real = if (activeFilters.isEmpty()) index
-                else tasks.indexOf(visibleTasks[index])
+            onEditAt = { visIndex ->
+                val real = visiblePairs[visIndex].index
                 val t = tasks[real]
                 editIndex = real
                 editLabel = t.label
@@ -162,9 +152,8 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 editType = t.type
                 editDue = t.dueDate
             },
-            onDeleteAt = { index ->
-                val real = if (activeFilters.isEmpty()) index
-                else tasks.indexOf(visibleTasks[index])
+            onDeleteAt = { visIndex ->
+                val real = visiblePairs[visIndex].index
                 pendingDeleteIndex = real
             }
         )
