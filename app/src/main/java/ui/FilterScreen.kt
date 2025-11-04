@@ -21,10 +21,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.todolistapp.viewmodel.FilterViewModel
 import model.TaskStatus
 import model.TaskType
 
@@ -34,12 +37,12 @@ import model.TaskType
 fun FilterScreen(
     initialStatus: List<TaskStatus>,
     initialTypes: List<TaskType>,
+    vm: FilterViewModel = viewModel(),
     onApply: (List<TaskStatus>, List<TaskType>) -> Unit,
     onReset: () -> Unit,
     onClose: () -> Unit
 ) {
-    val selStatus = remember { mutableStateListOf<TaskStatus>().apply { addAll(initialStatus) } }
-    val selTypes  = remember { mutableStateListOf<TaskType>().apply { addAll(initialTypes) } }
+    LaunchedEffect(Unit) { vm.seed(initialStatus, initialTypes) }
 
     Scaffold(
         topBar = {
@@ -47,13 +50,7 @@ fun FilterScreen(
                 title = { Text("Filters") },
                 navigationIcon = { TextButton(onClick = onClose) { Text("Close") } },
                 actions = {
-                    TextButton(
-                        onClick = {
-                            selStatus.clear()
-                            selTypes.clear()
-                            onReset()
-                        }
-                    ) { Text("Reset") }
+                    TextButton(onClick = { vm.reset(); onReset() }) { Text("Reset") }
                 }
             )
         }
@@ -73,9 +70,9 @@ fun FilterScreen(
                         val statuses = listOf(TaskStatus.A_FAIRE, TaskStatus.EN_COURS, TaskStatus.TERMINEE)
                         items(statuses) { s ->
                             FilterChip(
-                                selected = s in selStatus,
+                                selected = s in vm.selStatus,
                                 onClick = {
-                                    if (s in selStatus) selStatus.remove(s) else selStatus.add(s)
+                                    if (s in vm.selStatus) vm.selStatus.remove(s) else vm.selStatus.add(s)
                                 },
                                 label = {
                                     Text(
@@ -99,9 +96,9 @@ fun FilterScreen(
                         val types = listOf(TaskType.PERSONNEL, TaskType.TRAVAIL, TaskType.ETUDE, TaskType.AUTRE)
                         items(types) { t ->
                             FilterChip(
-                                selected = t in selTypes,
+                                selected = t in vm.selTypes,
                                 onClick = {
-                                    if (t in selTypes) selTypes.remove(t) else selTypes.add(t)
+                                    if (t in vm.selTypes) vm.selTypes.remove(t) else vm.selTypes.add(t)
                                 },
                                 label = {
                                     Text(
@@ -122,7 +119,7 @@ fun FilterScreen(
             Spacer(Modifier.height(8.dp))
 
             Button(
-                onClick = { onApply(selStatus.toList(), selTypes.toList()) },
+                onClick = { onApply(vm.selStatus.toList(), vm.selTypes.toList()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
