@@ -53,6 +53,8 @@ dependencies {
 
     // for id generator
     implementation(libs.kotlinx.datetime)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
