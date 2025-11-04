@@ -42,7 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.R
+import com.example.todolistapp.viewmodel.FilterViewModel
+import com.example.todolistapp.viewmodel.HomeViewModel
+import com.example.todolistapp.viewmodel.MainViewModel
 import model.Task
 import model.TaskStatus
 import model.TaskType
@@ -51,73 +55,42 @@ import model.nowMillisString
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskHome(modifier: Modifier = Modifier) {
-    val tasks = remember {
-        mutableStateListOf(
-            Task(label = "Prepare TD"),
-            Task(label = "Send email"),
-            Task(label = "Groceries")
-        )
-    }
-
-    val activeStatus = remember { mutableStateListOf<TaskStatus>() }
-    val activeTypes = remember { mutableStateListOf<TaskType>() }
-
-    var showAddDialog by remember { mutableStateOf(false) }
-    var addLabel by rememberSaveable { mutableStateOf("") }
-    var addDesc by rememberSaveable { mutableStateOf("") }
-    var addType by rememberSaveable { mutableStateOf(TaskType.AUTRE) }
-    var addDue by rememberSaveable { mutableStateOf<String?>(null) }
-    var showAddDatePicker by remember { mutableStateOf(false) }
+    val mainVm: MainViewModel = viewModel()
+    val homeVm: HomeViewModel = viewModel()
     val addDateState = rememberDatePickerState()
 
-    var pendingDeleteIndex by remember { mutableStateOf<Int?>(null) }
-    var showFilterScreen by remember { mutableStateOf(false) }
-    var detailIndex by remember { mutableStateOf<Int?>(null) }
-
-    val visiblePairs = tasks.withIndex().filter { iv ->
-        val sOk = activeStatus.isEmpty() || iv.value.status in activeStatus
-        val tOk = activeTypes.isEmpty() || iv.value.type in activeTypes
+    val visiblePairs = mainVm.tasks.withIndex().filter { iv ->
+        val sOk = mainVm.activeStatus.isEmpty() || iv.value.status in mainVm.activeStatus
+        val tOk = mainVm.activeTypes.isEmpty() || iv.value.type in mainVm.activeTypes
         sOk && tOk
     }
     val visibleTasks = visiblePairs.map { it.value }
 
-    if (showFilterScreen) {
+    if (homeVm.showFilterScreen.value) {
+        val filterVm: FilterViewModel = viewModel()
         FilterScreen(
-            initialStatus = activeStatus.toList(),
-            initialTypes = activeTypes.toList(),
-            onApply = { selStatus, selTypes ->
-                activeStatus.clear(); activeStatus.addAll(selStatus)
-                activeTypes.clear(); activeTypes.addAll(selTypes)
-                showFilterScreen = false
+            initialStatus = mainVm.activeStatus.toList(),
+            initialTypes = mainVm.activeTypes.toList(),
+            vm = filterVm,
+            onApply = { st, tp ->
+                mainVm.applyFilters(st, tp)
+                homeVm.showFilterScreen.value = false
             },
-            onReset = {
-                activeStatus.clear(); activeTypes.clear()
-            },
-            onClose = { showFilterScreen = false }
+            onReset = { mainVm.resetFilters() },
+            onClose = { homeVm.showFilterScreen.value = false }
         )
         return
     }
 
-    detailIndex?.let { idx ->
-        TaskDetailScreen(
-            task = tasks[idx],
-            onBack = { detailIndex = null },
-            onUpdate = { updated ->
-                tasks[idx] = updated.copy(updatedAt = nowMillisString())
-                detailIndex = null
-            },
-            onChangeStatus = { newStatus ->
-                val t = tasks[idx]
-                tasks[idx] = t.copy(status = newStatus, updatedAt = nowMillisString())
-            },
-            onChangeDueDate = { newDue ->
-                val t = tasks[idx]
-                tasks[idx] = t.copy(dueDate = newDue, updatedAt = nowMillisString())
-            },
-            onDelete = {
-                tasks.removeAt(idx)
-                detailIndex = null
-            }
+    homeVm.detailIndex.value?.let { idx ->
+        TaskDetailScreenHost(
+            index = idx,
+            task = mainVm.tasks[idx],
+            onBack = { homeVm.detailIndex.value = null },
+            onSave = { updated -> mainVm.updateTaskAt(idx, updated); homeVm.detailIndex.value = null },
+            onDelete = { mainVm.deleteAt(idx); homeVm.detailIndex.value = null },
+            onSetStatus = { st -> mainVm.setStatusAt(idx, st) },
+            onSetDue = { due -> mainVm.setDueAt(idx, due) }
         )
         return
     }
@@ -127,12 +100,12 @@ fun TaskHome(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Button(
-            onClick = { showAddDialog = true },
+            onClick = { homeVm.showAddDialog.value = true },
             modifier = Modifier.fillMaxWidth().height(56.dp)
         ) { Text("Add task") }
 
         OutlinedButton(
-            onClick = { showFilterScreen = true },
+            onClick = { homeVm.showFilterScreen.value = true },
             modifier = Modifier.fillMaxWidth().height(44.dp)
         ) { Text("Filter") }
 
@@ -140,20 +113,20 @@ fun TaskHome(modifier: Modifier = Modifier) {
             tasks = visibleTasks,
             onDeleteAt = { visIndex ->
                 val real = visiblePairs[visIndex].index
-                pendingDeleteIndex = real
+                mainVm.deleteAt(real)
             },
             onOpenAt = { visIndex ->
                 val real = visiblePairs[visIndex].index
-                detailIndex = real
+                homeVm.detailIndex.value = real
             }
         )
     }
 
-    if (showAddDialog) {
+    if (homeVm.showAddDialog.value) {
         AlertDialog(
             onDismissRequest = {
-                showAddDialog = false
-                addLabel = ""; addDesc = ""; addType = TaskType.AUTRE; addDue = null
+                homeVm.showAddDialog.value = false
+                homeVm.resetAddForm()
             },
             title = { Text("New task") },
             text = {
@@ -162,15 +135,15 @@ fun TaskHome(modifier: Modifier = Modifier) {
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     OutlinedTextField(
-                        value = addLabel,
-                        onValueChange = { addLabel = it },
+                        value = homeVm.addLabel.value,
+                        onValueChange = { homeVm.addLabel.value = it },
                         singleLine = true,
                         label = { Text("Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = addDesc,
-                        onValueChange = { addDesc = it },
+                        value = homeVm.addDesc.value,
+                        onValueChange = { homeVm.addDesc.value = it },
                         label = { Text("Description (optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -180,8 +153,8 @@ fun TaskHome(modifier: Modifier = Modifier) {
                         items(all.size) { i ->
                             val t = all[i]
                             FilterChip(
-                                selected = (t == addType),
-                                onClick = { addType = t },
+                                selected = t == homeVm.addType.value,
+                                onClick = { homeVm.addType.value = t },
                                 label = { Text(t.name.lowercase().replaceFirstChar { it.titlecase() }) }
                             )
                         }
@@ -189,12 +162,12 @@ fun TaskHome(modifier: Modifier = Modifier) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) {
                             OutlinedTextField(
-                                value = addDue ?: "",
+                                value = homeVm.addDue.value ?: "",
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Due date") },
                                 leadingIcon = {
-                                    IconButton(onClick = { showAddDatePicker = true }) {
+                                    IconButton(onClick = { homeVm.showAddDatePicker.value = true }) {
                                         Icon(
                                             painterResource(id = R.drawable.date_icon),
                                             contentDescription = "Pick date",
@@ -204,69 +177,53 @@ fun TaskHome(modifier: Modifier = Modifier) {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(Modifier.matchParentSize().clickable { showAddDatePicker = true })
+                            Spacer(
+                                Modifier
+                                    .matchParentSize()
+                                    .clickable { homeVm.showAddDatePicker.value = true }
+                            )
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = addLabel.isNotBlank(),
+                    enabled = homeVm.addLabel.value.isNotBlank(),
                     onClick = {
-                        tasks.add(
-                            Task(
-                                label = addLabel.trim(),
-                                description = addDesc.trim(),
-                                type = addType,
-                                dueDate = addDue
-                            )
+                        mainVm.addTask(
+                            label = homeVm.addLabel.value,
+                            desc = homeVm.addDesc.value,
+                            type = homeVm.addType.value,
+                            due = homeVm.addDue.value
                         )
-                        showAddDialog = false
-                        addLabel = ""; addDesc = ""; addType = TaskType.AUTRE; addDue = null
+                        homeVm.showAddDialog.value = false
+                        homeVm.resetAddForm()
                     }
                 ) { Text("Add") }
             },
             dismissButton = {
                 TextButton(onClick = {
-                    showAddDialog = false
-                    addLabel = ""; addDesc = ""; addType = TaskType.AUTRE; addDue = null
+                    homeVm.showAddDialog.value = false
+                    homeVm.resetAddForm()
                 }) { Text("Cancel") }
             }
         )
     }
 
-    if (showAddDatePicker) {
+    if (homeVm.showAddDatePicker.value) {
         DatePickerDialog(
-            onDismissRequest = { showAddDatePicker = false },
+            onDismissRequest = { homeVm.showAddDatePicker.value = false },
             confirmButton = {
                 TextButton(onClick = {
                     val ms = addDateState.selectedDateMillis
-                    addDue = ms?.let { formatDateOnly(it) }
-                    showAddDatePicker = false
+                    homeVm.addDue.value = ms?.let { formatDateOnly(it) }
+                    homeVm.showAddDatePicker.value = false
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { homeVm.showAddDatePicker.value = false }) { Text("Cancel") }
             }
         ) { DatePicker(state = addDateState) }
-    }
-
-    pendingDeleteIndex?.let { index ->
-        AlertDialog(
-            onDismissRequest = { pendingDeleteIndex = null },
-            title = { Text("Delete task") },
-            text = { Text("Are you sure you want to delete this task?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    tasks.removeAt(index)
-                    pendingDeleteIndex = null
-                    if (detailIndex == index) detailIndex = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDeleteIndex = null }) { Text("Cancel") }
-            }
-        )
     }
 }
 

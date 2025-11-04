@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,38 +46,34 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.R
+import com.example.todolistapp.viewmodel.DetailViewModel
 import model.Task
 import model.TaskStatus
 import model.TaskType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskDetailScreen(
+fun TaskDetailScreenHost(
+    index: Int,
     task: Task,
     onBack: () -> Unit,
-    onUpdate: (Task) -> Unit,
-    onChangeStatus: (TaskStatus) -> Unit,
-    onChangeDueDate: (String?) -> Unit,
-    onDelete: () -> Unit
+    onSave: (Task) -> Unit,
+    onDelete: () -> Unit,
+    onSetStatus: (TaskStatus) -> Unit,
+    onSetDue: (String?) -> Unit
 ) {
-    var label by rememberSaveable { mutableStateOf(task.label) }
-    var desc by rememberSaveable { mutableStateOf(task.description) }
-    var type by rememberSaveable { mutableStateOf(task.type) }
-    var due by rememberSaveable { mutableStateOf(task.dueDate) }
-    var curStatus by rememberSaveable { mutableStateOf(task.status) }
-
-    var showDatePicker by remember { mutableStateOf(false) }
+    val vm: DetailViewModel = viewModel(key = "detailVM_$index")
     val dateState = rememberDatePickerState()
-
-    var askDelete by remember { mutableStateOf(false) }
+    LaunchedEffect(task) { vm.seedFrom(task) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Task details") },
                 navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
-                actions = { TextButton(onClick = { askDelete = true }) { Text("Delete") } }
+                actions = { TextButton(onClick = { vm.askDelete.value = true }) { Text("Delete") } }
             )
         }
     ) { inner ->
@@ -91,15 +88,15 @@ fun TaskDetailScreen(
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
-                        value = label,
-                        onValueChange = { label = it },
+                        value = vm.label.value,
+                        onValueChange = { vm.label.value = it },
                         singleLine = true,
                         label = { Text("Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = desc,
-                        onValueChange = { desc = it },
+                        value = vm.desc.value,
+                        onValueChange = { vm.desc.value = it },
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -115,8 +112,8 @@ fun TaskDetailScreen(
                         items(all.size) { i ->
                             val t = all[i]
                             FilterChip(
-                                selected = (t == type),
-                                onClick = { type = t },
+                                selected = (t == vm.type.value),
+                                onClick = { vm.type.value = t },
                                 label = {
                                     Text(
                                         when (t) {
@@ -131,34 +128,35 @@ fun TaskDetailScreen(
                         }
                     }
 
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         StatusChoiceButton(
                             label = "To do",
-                            selected = curStatus == TaskStatus.A_FAIRE,
+                            selected = vm.status.value == TaskStatus.A_FAIRE,
                             onClick = {
-                                curStatus = TaskStatus.A_FAIRE
-                                onChangeStatus(TaskStatus.A_FAIRE)
+                                vm.status.value = TaskStatus.A_FAIRE
+                                onSetStatus(TaskStatus.A_FAIRE)
                             },
                             modifier = Modifier.weight(1f)
                         )
                         StatusChoiceButton(
                             label = "In progress",
-                            selected = curStatus == TaskStatus.EN_COURS,
+                            selected = vm.status.value == TaskStatus.EN_COURS,
                             onClick = {
-                                curStatus = TaskStatus.EN_COURS
-                                onChangeStatus(TaskStatus.EN_COURS)
+                                vm.status.value = TaskStatus.EN_COURS
+                                onSetStatus(TaskStatus.EN_COURS)
                             },
                             modifier = Modifier.weight(1f)
                         )
                         StatusChoiceButton(
                             label = "Done",
-                            selected = curStatus == TaskStatus.TERMINEE,
+                            selected = vm.status.value == TaskStatus.TERMINEE,
                             onClick = {
-                                curStatus = TaskStatus.TERMINEE
-                                onChangeStatus(TaskStatus.TERMINEE)
+                                vm.status.value = TaskStatus.TERMINEE
+                                onSetStatus(TaskStatus.TERMINEE)
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -166,12 +164,12 @@ fun TaskDetailScreen(
 
                     Box(Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = due ?: "",
+                            value = vm.due.value ?: "",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Due date") },
                             leadingIcon = {
-                                IconButton(onClick = { showDatePicker = true }) {
+                                IconButton(onClick = { vm.showDatePicker.value = true }) {
                                     Icon(
                                         painterResource(id = R.drawable.date_icon),
                                         contentDescription = "Pick date",
@@ -184,7 +182,7 @@ fun TaskDetailScreen(
                         Spacer(
                             Modifier
                                 .matchParentSize()
-                                .clickable { showDatePicker = true }
+                                .clickable { vm.showDatePicker.value = true }
                         )
                     }
                 }
@@ -193,53 +191,44 @@ fun TaskDetailScreen(
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Created: ${formatDateTime(task.createdAt)}")
-                    val isModified = task.updatedAt != task.createdAt
-                    val prefix = if (isModified) "Updated" else "Updated"
-                    Text("$prefix: ${formatDateTime(task.updatedAt)}")
+                    Text("Updated: ${formatDateTime(task.updatedAt)}")
                 }
             }
 
             Button(
-                onClick = {
-                    if (label.isNotBlank()) {
-                        onUpdate(task.copy(label = label.trim(), description = desc.trim(), type = type, dueDate = due))
-                    }
-                },
+                onClick = { if (vm.label.value.isNotBlank()) onSave(vm.toUpdated(task)) },
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) { Text("Save changes") }
         }
     }
 
-    if (showDatePicker) {
+    if (vm.showDatePicker.value) {
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { vm.showDatePicker.value = false },
             confirmButton = {
                 TextButton(onClick = {
                     val ms = dateState.selectedDateMillis
-                    due = ms?.let { formatDateOnly(it) }
-                    onChangeDueDate(due)
-                    showDatePicker = false
+                    vm.due.value = ms?.let { formatDateOnly(it) }
+                    onSetDue(vm.due.value)
+                    vm.showDatePicker.value = false
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { vm.showDatePicker.value = false }) { Text("Cancel") }
             }
-        ) { DatePicker(state = dateState) }
+        ) { DatePicker(state = rememberDatePickerState()) }
     }
 
-    if (askDelete) {
+    if (vm.askDelete.value) {
         AlertDialog(
-            onDismissRequest = { askDelete = false },
+            onDismissRequest = { vm.askDelete.value = false },
             title = { Text("Delete task") },
             text = { Text("Are you sure you want to delete this task?") },
             confirmButton = {
-                TextButton(onClick = {
-                    askDelete = false
-                    onDelete()
-                }) { Text("Delete") }
+                TextButton(onClick = { vm.askDelete.value = false; onDelete() }) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { askDelete = false }) { Text("Cancel") }
+                TextButton(onClick = { vm.askDelete.value = false }) { Text("Cancel") }
             }
         )
     }
@@ -262,11 +251,8 @@ private fun StatusChoiceButton(
             style = MaterialTheme.typography.labelMedium
         )
     }
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier, contentPadding = padding) { content() }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier, contentPadding = padding) { content() }
-    }
+    if (selected) Button(onClick = onClick, modifier = modifier, contentPadding = padding) { content() }
+    else OutlinedButton(onClick = onClick, modifier = modifier, contentPadding = padding) { content() }
 }
 
 @SuppressLint("SimpleDateFormat")
