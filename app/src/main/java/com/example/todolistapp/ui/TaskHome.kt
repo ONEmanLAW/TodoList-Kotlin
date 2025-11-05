@@ -100,17 +100,22 @@ fun TaskHome(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth().height(44.dp)
         ) { Text("Filter") }
 
-        TaskListScreen(
-            tasks = visibleTasks,
-            onDeleteAt = { visIndex ->
-                val real = visiblePairs[visIndex].index
-                homeVm.pendingDeleteIndex.value = real
-            },
-            onOpenAt = { visIndex ->
-                val real = visiblePairs[visIndex].index
-                homeVm.detailIndex.value = real
-            }
-        )
+        if (visibleTasks.isNotEmpty()){
+            TaskListScreen(
+                tasks = visibleTasks,
+                onDeleteAt = { visIndex ->
+                    val real = visiblePairs[visIndex].index
+                    homeVm.pendingDeleteIndex.value = real
+                },
+                onOpenAt = { visIndex ->
+                    val real = visiblePairs[visIndex].index
+                    homeVm.detailIndex.value = real
+                }
+            )
+        }else{
+            Text("No tasks found.")
+        }
+
     }
 
     if (homeVm.showAddDialog.value) {
