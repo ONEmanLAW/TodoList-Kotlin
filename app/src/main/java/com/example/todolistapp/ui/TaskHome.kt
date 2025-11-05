@@ -113,7 +113,14 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 }
             )
         }else{
-            Text("No tasks found.")
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("No tasks found.")
+                Text("Click on the 'Add task' button to add a new task.")
+            }
         }
 
     }
