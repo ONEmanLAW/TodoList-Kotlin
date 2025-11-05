@@ -4,6 +4,7 @@ enum class TaskStatus { A_FAIRE, EN_COURS, TERMINEE }
 enum class TaskType { PERSONNEL, TRAVAIL, ETUDE, AUTRE }
 
 data class Task(
+    val id: Long? = null,
     val label: String,
     val description: String = "",
     val status: TaskStatus = TaskStatus.A_FAIRE,

@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
+
 }
 
 android {
@@ -54,6 +56,10 @@ dependencies {
     // for id generator
     implementation(libs.kotlinx.datetime)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
 
     testImplementation(libs.junit)
