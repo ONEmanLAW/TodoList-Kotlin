@@ -2,7 +2,7 @@ package com.example.todolistapp.data.local
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
-import model.TaskStatus
+import com.example.todolistapp.model.TaskStatus
 
 @Dao
 interface TaskDao {

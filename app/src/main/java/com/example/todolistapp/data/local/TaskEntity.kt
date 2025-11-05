@@ -1,8 +1,8 @@
 package com.example.todolistapp.data.local
 
 import androidx.room.Entity
-import model.TaskStatus
-import model.TaskType
+import com.example.todolistapp.model.TaskStatus
+import com.example.todolistapp.model.TaskType
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "tasks")

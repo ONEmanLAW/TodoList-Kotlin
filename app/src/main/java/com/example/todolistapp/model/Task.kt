@@ -1,4 +1,4 @@
-package model
+package com.example.todolistapp.model
 
 enum class TaskStatus { A_FAIRE, EN_COURS, TERMINEE }
 enum class TaskType { PERSONNEL, TRAVAIL, ETUDE, AUTRE }

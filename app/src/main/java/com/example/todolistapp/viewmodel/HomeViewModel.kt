@@ -1,9 +1,8 @@
 package com.example.todolistapp.viewmodel
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import model.TaskType
+import com.example.todolistapp.model.TaskType
 
 class HomeViewModel : ViewModel() {
     var showAddDialog = mutableStateOf(false)

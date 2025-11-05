@@ -3,8 +3,8 @@ package com.example.todolistapp.viewmodel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import model.TaskStatus
-import model.TaskType
+import com.example.todolistapp.model.TaskStatus
+import com.example.todolistapp.model.TaskType
 
 class FilterViewModel : ViewModel() {
     val selStatus = mutableStateListOf<TaskStatus>()

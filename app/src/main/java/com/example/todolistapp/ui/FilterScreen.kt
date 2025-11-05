@@ -1,4 +1,4 @@
-package ui
+package com.example.todolistapp.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,14 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.viewmodel.FilterViewModel
-import model.TaskStatus
-import model.TaskType
+import com.example.todolistapp.model.TaskStatus
+import com.example.todolistapp.model.TaskType
 
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,4 +1,4 @@
-package ui
+package com.example.todolistapp.ui
 
 import android.annotation.SuppressLint
 import android.icu.text.SimpleDateFormat
@@ -36,11 +36,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
@@ -49,9 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.R
 import com.example.todolistapp.viewmodel.DetailViewModel
-import model.Task
-import model.TaskStatus
-import model.TaskType
+import com.example.todolistapp.model.Task
+import com.example.todolistapp.model.TaskStatus
+import com.example.todolistapp.model.TaskType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -216,7 +211,9 @@ fun TaskDetailScreenHost(
             dismissButton = {
                 TextButton(onClick = { vm.showDatePicker.value = false }) { Text("Cancel") }
             }
-        ) { DatePicker(state = rememberDatePickerState()) }
+        ) {
+            DatePicker(state = dateState)
+        }
     }
 
     if (vm.askDelete.value) {

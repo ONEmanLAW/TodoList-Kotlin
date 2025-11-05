@@ -2,9 +2,9 @@ package com.example.todolistapp.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import model.Task
-import model.TaskStatus
-import model.TaskType
+import com.example.todolistapp.model.Task
+import com.example.todolistapp.model.TaskStatus
+import com.example.todolistapp.model.TaskType
 
 class DetailViewModel : ViewModel() {
     var label = mutableStateOf("")

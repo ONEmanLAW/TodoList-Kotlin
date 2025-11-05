@@ -1,4 +1,4 @@
-package ui
+package com.example.todolistapp.ui
 
 import android.annotation.SuppressLint
 import android.icu.text.SimpleDateFormat
@@ -23,10 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import model.Task
+import com.example.todolistapp.model.Task
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
+import com.example.todolistapp.model.TaskStatus
 
 @Composable
 fun TaskListScreen(
@@ -88,9 +89,9 @@ fun TaskRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val statusText = when (task.status) {
-                    model.TaskStatus.A_FAIRE -> "To do"
-                    model.TaskStatus.EN_COURS -> "In progress"
-                    model.TaskStatus.TERMINEE -> "Done"
+                    TaskStatus.A_FAIRE -> "To do"
+                    TaskStatus.EN_COURS -> "In progress"
+                    TaskStatus.TERMINEE -> "Done"
                 }
                 Text(statusText, style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.width(10.dp))
