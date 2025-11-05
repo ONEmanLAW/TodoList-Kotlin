@@ -9,6 +9,7 @@ class HomeViewModel : ViewModel() {
     var showAddDatePicker = mutableStateOf(false)
     var showFilterScreen = mutableStateOf(false)
     var detailIndex = mutableStateOf<Int?>(null)
+    var pendingDeleteIndex = mutableStateOf<Int?>(null)
 
     var addLabel = mutableStateOf("")
     var addDesc  = mutableStateOf("")

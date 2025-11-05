@@ -104,7 +104,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
             tasks = visibleTasks,
             onDeleteAt = { visIndex ->
                 val real = visiblePairs[visIndex].index
-                mainVm.deleteAt(real)
+                homeVm.pendingDeleteIndex.value = real
             },
             onOpenAt = { visIndex ->
                 val real = visiblePairs[visIndex].index
@@ -215,6 +215,23 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 TextButton(onClick = { homeVm.showAddDatePicker.value = false }) { Text("Cancel") }
             }
         ) { DatePicker(state = addDateState) }
+    }
+
+    homeVm.pendingDeleteIndex.value?.let { index ->
+        AlertDialog(
+            onDismissRequest = { homeVm.pendingDeleteIndex.value = null },
+            title = { Text("Delete task") },
+            text = { Text("Are you sure you want to delete this task?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    mainVm.deleteAt(index)
+                    homeVm.pendingDeleteIndex.value = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { homeVm.pendingDeleteIndex.value = null }) { Text("Cancel") }
+            }
+        )
     }
 }
 
