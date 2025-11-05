@@ -15,14 +15,15 @@ import com.example.todolistapp.model.TaskType
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repo = TaskRepository(AppDatabase.getInstance(application).taskDao())
+    private val repo = TaskRepository.getInstance(application)
+
     val tasks = mutableStateListOf<Task>()
     val activeStatus = mutableStateListOf<TaskStatus>()
     val activeTypes  = mutableStateListOf<TaskType>()
 
     init {
         viewModelScope.launch {
-            repo.observeAll().collectLatest { list ->
+            repo.getAllTasks().collectLatest { list ->
                 tasks.clear()
                 tasks.addAll(list)
             }
