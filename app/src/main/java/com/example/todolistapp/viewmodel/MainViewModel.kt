@@ -1,20 +1,22 @@
 package com.example.todolistapp.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todolistapp.data.TaskRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import com.example.todolistapp.model.Task
 import com.example.todolistapp.model.TaskStatus
 import com.example.todolistapp.model.TaskType
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repo = TaskRepository.getInstance(application)
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val repo: TaskRepository
+) : ViewModel() {
 
     val tasks = mutableStateListOf<Task>()
     val activeStatus = mutableStateListOf<TaskStatus>()
@@ -66,7 +68,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetFilters() {
-        activeStatus.clear()
-        activeTypes.clear()
+        activeStatus.clear(); activeTypes.clear()
     }
 }

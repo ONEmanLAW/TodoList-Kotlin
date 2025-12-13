@@ -40,15 +40,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.R
 import com.example.todolistapp.viewmodel.FilterViewModel
 import com.example.todolistapp.viewmodel.HomeViewModel
-import com.example.todolistapp.viewmodel.MainViewModel
 import com.example.todolistapp.model.TaskType
+
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.todolistapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskHome(modifier: Modifier = Modifier) {
-    val mainVm: MainViewModel = viewModel()
     val homeVm: HomeViewModel = viewModel()
     val addDateState = rememberDatePickerState()
+
+    val mainVm: MainViewModel = hiltViewModel()
 
     val visiblePairs = mainVm.tasks.withIndex().filter { iv ->
         val sOk = mainVm.activeStatus.isEmpty() || iv.value.status in mainVm.activeStatus

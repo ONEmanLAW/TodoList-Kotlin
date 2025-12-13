@@ -1,7 +1,5 @@
 package com.example.todolistapp.data
 
-import android.content.Context
-import com.example.todolistapp.data.local.AppDatabase
 import com.example.todolistapp.data.local.TaskDao
 import com.example.todolistapp.data.local.TaskEntity
 import kotlinx.coroutines.flow.Flow
@@ -9,8 +7,11 @@ import kotlinx.coroutines.flow.map
 import com.example.todolistapp.model.Task
 import com.example.todolistapp.model.TaskStatus
 import com.example.todolistapp.model.nowMillisString
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TaskRepository private constructor(
+@Singleton
+class TaskRepository @Inject constructor(
     private val dao: TaskDao
 ) {
     fun getAllTasks(): Flow<List<Task>> =
@@ -58,16 +59,6 @@ class TaskRepository private constructor(
 
     suspend fun setDueDate(id: Long, due: String?) {
         dao.updateDueDate(id, due, nowMillisString())
-    }
-
-    companion object {
-        @Volatile private var _inst: TaskRepository? = null
-
-        fun getInstance(context: Context): TaskRepository =
-            _inst ?: synchronized(this) {
-                val dao = AppDatabase.getInstance(context).taskDao()
-                TaskRepository(dao).also { _inst = it }
-            }
     }
 }
 
