@@ -31,40 +31,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todolistapp.R
+import com.example.todolistapp.model.TaskType
 import com.example.todolistapp.viewmodel.FilterViewModel
 import com.example.todolistapp.viewmodel.HomeViewModel
-import com.example.todolistapp.model.TaskType
-
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.todolistapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskHome(modifier: Modifier = Modifier) {
+    val mainVm: MainViewModel = hiltViewModel()
     val homeVm: HomeViewModel = viewModel()
     val addDateState = rememberDatePickerState()
 
-    val mainVm: MainViewModel = hiltViewModel()
-
-    val visiblePairs = mainVm.tasks.withIndex().filter { iv ->
-        val sOk = mainVm.activeStatus.isEmpty() || iv.value.status in mainVm.activeStatus
-        val tOk = mainVm.activeTypes.isEmpty() || iv.value.type in mainVm.activeTypes
-        sOk && tOk
-    }
-    val visibleTasks = visiblePairs.map { it.value }
+    val masterTasksState = mainVm.tasks.collectAsState(initial = emptyList())
+    val visibleState     = mainVm.visibleTasks.collectAsState(initial = emptyList())
+    val statusFilters    = mainVm.activeStatus.collectAsState(initial = emptySet())
+    val typeFilters      = mainVm.activeTypes.collectAsState(initial = emptySet())
 
     if (homeVm.showFilterScreen.value) {
         val filterVm: FilterViewModel = viewModel()
         FilterScreen(
-            initialStatus = mainVm.activeStatus.toList(),
-            initialTypes = mainVm.activeTypes.toList(),
+            initialStatus = statusFilters.value.toList(),
+            initialTypes = typeFilters.value.toList(),
             vm = filterVm,
             onApply = { st, tp ->
                 mainVm.applyFilters(st, tp)
@@ -79,7 +76,7 @@ fun TaskHome(modifier: Modifier = Modifier) {
     homeVm.detailIndex.value?.let { idx ->
         TaskDetailScreenHost(
             index = idx,
-            task = mainVm.tasks[idx],
+            task = masterTasksState.value[idx],
             onBack = { homeVm.detailIndex.value = null },
             onSave = { updated -> mainVm.updateTaskAt(idx, updated); homeVm.detailIndex.value = null },
             onDelete = { mainVm.deleteAt(idx); homeVm.detailIndex.value = null },
@@ -103,19 +100,22 @@ fun TaskHome(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth().height(44.dp)
         ) { Text("Filter") }
 
-        if (visibleTasks.isNotEmpty()){
+        val visibleTasks = visibleState.value
+        if (visibleTasks.isNotEmpty()) {
             TaskListScreen(
                 tasks = visibleTasks,
                 onDeleteAt = { visIndex ->
-                    val real = visiblePairs[visIndex].index
-                    homeVm.pendingDeleteIndex.value = real
+                    val task = visibleTasks.getOrNull(visIndex) ?: return@TaskListScreen
+                    val real = masterTasksState.value.indexOfFirst { it.id == task.id }
+                    if (real >= 0) homeVm.pendingDeleteIndex.value = real
                 },
                 onOpenAt = { visIndex ->
-                    val real = visiblePairs[visIndex].index
-                    homeVm.detailIndex.value = real
+                    val task = visibleTasks.getOrNull(visIndex) ?: return@TaskListScreen
+                    val real = masterTasksState.value.indexOfFirst { it.id == task.id }
+                    if (real >= 0) homeVm.detailIndex.value = real
                 }
             )
-        }else{
+        } else {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -125,7 +125,6 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 Text("Click on the 'Add task' button to add a new task.")
             }
         }
-
     }
 
     if (homeVm.showAddDialog.value) {
