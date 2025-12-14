@@ -52,10 +52,9 @@ fun TaskHome(modifier: Modifier = Modifier) {
     val homeVm: HomeViewModel = viewModel()
     val addDateState = rememberDatePickerState()
 
-    val masterTasksState = mainVm.tasks.collectAsState(initial = emptyList())
-    val visibleState     = mainVm.visibleTasks.collectAsState(initial = emptyList())
-    val statusFilters    = mainVm.activeStatus.collectAsState(initial = emptySet())
-    val typeFilters      = mainVm.activeTypes.collectAsState(initial = emptySet())
+    val visibleState = mainVm.visibleTasks.collectAsState(initial = emptyList())
+    val statusFilters = mainVm.activeStatus.collectAsState(initial = emptySet())
+    val typeFilters = mainVm.activeTypes.collectAsState(initial = emptySet())
 
     if (homeVm.showFilterScreen.value) {
         val filterVm: FilterViewModel = viewModel()
@@ -73,16 +72,17 @@ fun TaskHome(modifier: Modifier = Modifier) {
         return
     }
 
-    homeVm.detailIndex.value?.let { idx ->
-        TaskDetailScreenHost(
-            index = idx,
-            task = masterTasksState.value[idx],
-            onBack = { homeVm.detailIndex.value = null },
-            onSave = { updated -> mainVm.updateTaskAt(idx, updated); homeVm.detailIndex.value = null },
-            onDelete = { mainVm.deleteAt(idx); homeVm.detailIndex.value = null },
-            onSetStatus = { st -> mainVm.setStatusAt(idx, st) },
-            onSetDue = { due -> mainVm.setDueAt(idx, due) }
-        )
+    homeVm.detailTaskId.value?.let { taskId ->
+        mainVm.getTaskById(taskId)?.let { task ->
+            TaskDetailScreenHost(
+                task = task,
+                onBack = { homeVm.detailTaskId.value = null },
+                onSave = { updated -> mainVm.updateTask(updated); homeVm.detailTaskId.value = null },
+                onDelete = { mainVm.deleteTaskById(taskId); homeVm.detailTaskId.value = null },
+                onSetStatus = { st -> mainVm.setStatusForTask(taskId, st) },
+                onSetDue = { due -> mainVm.setDueDateForTask(taskId, due) }
+            )
+        }
         return
     }
 
@@ -106,13 +106,11 @@ fun TaskHome(modifier: Modifier = Modifier) {
                 tasks = visibleTasks,
                 onDeleteAt = { visIndex ->
                     val task = visibleTasks.getOrNull(visIndex) ?: return@TaskListScreen
-                    val real = masterTasksState.value.indexOfFirst { it.id == task.id }
-                    if (real >= 0) homeVm.pendingDeleteIndex.value = real
+                    task.id?.let { homeVm.pendingDeleteTaskId.value = it }
                 },
                 onOpenAt = { visIndex ->
                     val task = visibleTasks.getOrNull(visIndex) ?: return@TaskListScreen
-                    val real = masterTasksState.value.indexOfFirst { it.id == task.id }
-                    if (real >= 0) homeVm.detailIndex.value = real
+                    task.id?.let { homeVm.detailTaskId.value = it }
                 }
             )
         } else {
@@ -231,19 +229,19 @@ fun TaskHome(modifier: Modifier = Modifier) {
         ) { DatePicker(state = addDateState) }
     }
 
-    homeVm.pendingDeleteIndex.value?.let { index ->
+    homeVm.pendingDeleteTaskId.value?.let { taskId ->
         AlertDialog(
-            onDismissRequest = { homeVm.pendingDeleteIndex.value = null },
+            onDismissRequest = { homeVm.pendingDeleteTaskId.value = null },
             title = { Text("Delete task") },
             text = { Text("Are you sure you want to delete this task?") },
             confirmButton = {
                 TextButton(onClick = {
-                    mainVm.deleteAt(index)
-                    homeVm.pendingDeleteIndex.value = null
+                    mainVm.deleteTaskById(taskId)
+                    homeVm.pendingDeleteTaskId.value = null
                 }) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { homeVm.pendingDeleteIndex.value = null }) { Text("Cancel") }
+                TextButton(onClick = { homeVm.pendingDeleteTaskId.value = null }) { Text("Cancel") }
             }
         )
     }

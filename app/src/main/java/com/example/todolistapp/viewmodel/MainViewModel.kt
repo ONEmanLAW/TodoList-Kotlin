@@ -50,6 +50,10 @@ class MainViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    fun getTaskById(id: Long): Task? {
+        return tasks.value.find { it.id == id }
+    }
+
     // Actions d'écriture -> DB (le flow se mettra à jour tout seul)
     fun addTask(label: String, desc: String, type: TaskType, due: String?) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -64,28 +68,27 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun updateTaskAt(index: Int, updated: Task) {
+    fun updateTask(updated: Task) {
         viewModelScope.launch(Dispatchers.IO) {
-            val current = tasks.value.getOrNull(index) ?: return@launch
-            repo.update(updated.copy(id = current.id))
+            repo.update(updated)
         }
     }
 
-    fun deleteAt(index: Int) {
+    fun deleteTaskById(taskId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            tasks.value.getOrNull(index)?.let { repo.delete(it) }
+            tasks.value.find { it.id == taskId }?.let { repo.delete(it) }
         }
     }
 
-    fun setStatusAt(index: Int, status: TaskStatus) {
+    fun setStatusForTask(taskId: Long, status: TaskStatus) {
         viewModelScope.launch(Dispatchers.IO) {
-            tasks.value.getOrNull(index)?.id?.let { repo.setStatus(it, status) }
+            repo.setStatus(taskId, status)
         }
     }
 
-    fun setDueAt(index: Int, due: String?) {
+    fun setDueDateForTask(taskId: Long, due: String?) {
         viewModelScope.launch(Dispatchers.IO) {
-            tasks.value.getOrNull(index)?.id?.let { repo.setDueDate(it, due) }
+            repo.setDueDate(taskId, due)
         }
     }
 

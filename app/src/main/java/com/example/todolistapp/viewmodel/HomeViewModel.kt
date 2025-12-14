@@ -8,8 +8,8 @@ class HomeViewModel : ViewModel() {
     var showAddDialog = mutableStateOf(false)
     var showAddDatePicker = mutableStateOf(false)
     var showFilterScreen = mutableStateOf(false)
-    var detailIndex = mutableStateOf<Int?>(null)
-    var pendingDeleteIndex = mutableStateOf<Int?>(null)
+    var detailTaskId = mutableStateOf<Long?>(null)
+    var pendingDeleteTaskId = mutableStateOf<Long?>(null)
 
     var addLabel = mutableStateOf("")
     var addDesc  = mutableStateOf("")

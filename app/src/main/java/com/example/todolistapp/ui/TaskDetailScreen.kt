@@ -51,7 +51,6 @@ import com.example.todolistapp.model.TaskType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDetailScreenHost(
-    index: Int,
     task: Task,
     onBack: () -> Unit,
     onSave: (Task) -> Unit,
@@ -59,7 +58,7 @@ fun TaskDetailScreenHost(
     onSetStatus: (TaskStatus) -> Unit,
     onSetDue: (String?) -> Unit
 ) {
-    val vm: DetailViewModel = viewModel(key = "detailVM_$index")
+    val vm: DetailViewModel = viewModel(key = "detailVM_${task.id}")
     val dateState = rememberDatePickerState()
     LaunchedEffect(task) { vm.seedFrom(task) }
 
